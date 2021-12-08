@@ -1,0 +1,21 @@
+add_filter( 'woocommerce_product_get_price', function( $price, $product ) {
+	global $WCFM, $WCFMmp, $post, $blog_id;
+	
+	$vendor_id = wcfm_get_vendor_id_by_post( $product->get_id() );
+	if( $vendor_id && !wcfm_is_vendor() ) {
+		$commisson_rule = $WCFMmp->wcfmmp_product->wcfmmp_get_product_commission_rule( $product->get_id() );
+		if( !empty( $commisson_rule ) && is_array( $commisson_rule ) && isset( $commisson_rule['percent'] ) ) {
+			$price += ( $price * ((float)$commisson_rule['percent']/100) );
+		}
+		if( !empty( $commisson_rule ) && is_array( $commisson_rule ) && isset( $commisson_rule['fixed'] ) ) {
+			$price += (float)$commisson_rule['fixed'];
+		}
+	}
+	return $price;
+}, 50, 2 );
+
+add_filter( 'wcfmmp_order_item_commission', function( $item_commission, $vendor_id, $product_id, $variation_id, $item_price, $quantity, $commission_rule, $order_id ) {
+	$seller_listing_price = ($item_price - (float) $commission_rule['fixed']) / (1 + ((float) $commission_rule['percent']/100));
+	$item_commission = $seller_listing_price;	
+	return $item_commission;
+}, 50, 8 );
